@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>tiles=60 loaded=60</title>
+<link rel="stylesheet" href="styles/base.css">
+<link rel="stylesheet" href="styles/layout.css">
+<link rel="stylesheet" href="styles/board.css">
+<link rel="stylesheet" href="styles/tray.css">
+<link rel="stylesheet" href="styles/holding.css">
+<link rel="stylesheet" href="styles/prop.css">
+<link rel="stylesheet" href="styles/modal.css">
+<!-- 迭代 6：一次性反馈动画（飘字 / 回弹 / 脉冲 / 通关暖光），放最后便于覆盖 -->
+<link rel="stylesheet" href="styles/animations.css">
+</head>
+<body>
+  <div class="app">
+    <!-- ① 顶部状态栏：剩余 / 步数 / 用时 / 状态 + 暂停（FR-02、FR-15） -->
+    <header class="hud">
+      <span class="hud__title" id="hud-level">入门</span>
+      <span class="hud__stat">剩余 <b id="hud-remaining">60</b></span>
+      <span class="hud__stat">步数 <b id="hud-moves">0</b></span>
+      <span class="hud__stat">用时 <b id="hud-time">0:06</b></span>
+      <span class="hud__stat">状态 <b id="hud-state" data-state="Playing">进行中</b></span>
+      <button type="button" class="btn btn--ghost hud__settings" id="btn-settings">设置</button>
+      <button type="button" class="btn btn--ghost hud__pause" id="btn-pause">暂停</button>
+    </header>
+
+    <!-- ② 牌堆区：.stage 用固定像素尺寸，靠 transform: scale(k) 等比适配窗口 -->
+    <main class="stage-wrap" id="stage-wrap">
+      <div class="stage" id="stage" style="--stage-w: 16; --stage-h: 10; transform: scale(1.2643);"><div class="tile" data-id="t003" data-layer="0" style="--col: 0; --row: 0; --jx: -8; --jy: -9; z-index: 100;"><img class="tile__icon" draggable="false" src="assets/nai/gou.png" alt="奶狗"></div><div class="tile is-covered" data-id="t033" data-layer="0" style="--col: 10; --row: 0; --jx: -7; --jy: -2; z-index: 100;"><img class="tile__icon" draggable="false" src="assets/nai/gou.png" alt="奶狗"></div><div class="tile is-covered" data-id="t035" data-layer="0" style="--col: 0; --row: 2; --jx: -6; --jy: 1; z-index: 102;"><img class="tile__icon" draggable="false" src="assets/nai/gou.png" alt="奶狗"></div><div class="tile is-covered" data-id="t036" data-layer="0" style="--col: 8; --row: 6; --jx: 7; --jy: -4; z-index: 106;"><img class="tile__icon" draggable="false" src="assets/nai/ji.png" alt="奶鸡"></div><div class="tile is-covered" data-id="t038" data-layer="0" style="--col: 10; --row: 2; --jx: 7; --jy: -1; z-index: 102;"><img class="tile__icon" draggable="false" src="assets/nai/ji.png" alt="奶鸡"></div><div class="tile is-covered" data-id="t042" data-layer="0" style="--col: 6; --row: 0; --jx: 6; --jy: -4; z-index: 100;"><img class="tile__icon" draggable="false" src="assets/nai/cha.png" alt="奶茶"></div><div class="tile is-covered" data-id="t045" data-layer="0" style="--col: 8; --row: 4; --jx: -8; --jy: -2; z-index: 104;"><img class="tile__icon" draggable="false" src="assets/nai/shu.png" alt="奶鼠"></div><div class="tile is-covered" data-id="t048" data-layer="0" style="--col: 6; --row: 6; --jx: -7; --jy: 5; z-index: 106;"><img class="tile__icon" draggable="false" src="assets/nai/mao.png" alt="奶猫"></div><div class="tile is-covered" data-id="t050" data-layer="0" style="--col: 4; --row: 0; --jx: -9; --jy: -1; z-index: 100;"><img class="tile__icon" draggable="false" src="assets/nai/mao.png" alt="奶猫"></div><div class="tile is-covered" data-id="t053" data-layer="0" style="--col: 2; --row: 2; --jx: -3; --jy: 4; z-index: 102;"><img class="tile__icon" draggable="false" src="assets/nai/ping.png" alt="奶瓶"></div><div class="tile is-covered" data-id="t055" data-layer="0" style="--col: 10; --row: 4; --jx: -4; --jy: 1; z-index: 104;"><img class="tile__icon" draggable="false" src="assets/nai/shi.png" alt="奶屎"></div><div class="tile is-covered" data-id="t056" data-layer="0" style="--col: 10; --row: 6; --jx: 3; --jy: 9; z-index: 106;"><img class="tile__icon" draggable="false" src="assets/nai/shi.png" alt="奶屎"></div><div class="tile is-covered" data-id="t057" data-layer="0" style="--col: 2; --row: 4; --jx: -9; --jy: -2; z-index: 104;"><img class="tile__icon" draggable="false" src="assets/nai/yu.png" alt="奶鱼"></div><div class="tile is-covered" data-id="t058" data-layer="0" style="--col: 2; --row: 6; --jx: -2; --jy: -8; z-index: 106;"><img class="tile__icon" draggable="false" src="assets/nai/yu.png" alt="奶鱼"></div><div class="tile is-covered" data-id="t059" data-layer="0" style="--col: 2; --row: 0; --jx: 5; --jy: 0; z-index: 100;"><img class="tile__icon" draggable="false" src="assets/nai/yu.png" alt="奶鱼"></div><div class="tile is-covered" data-id="t018" data-layer="1" style="--col: 7; --row: 3; --jx: -4; --jy: 9; z-index: 113;"><img class="tile__icon" draggable="false" src="assets/nai/mao.png" alt="奶猫"></div><div class="tile is-covered" data-id="t019" data-layer="1" style="--col: 13; --row: 1; --jx: 7; --jy: -2; z-index: 111;"><img class="tile__icon" draggable="false" src="assets/nai/mao.png" alt="奶猫"></div><div class="tile is-covered" data-id="t021" data-layer="1" style="--col: 5; --row: 3; --jx: 3; --jy: 0; z-index: 113;"><img class="tile__icon" draggable="false" src="assets/nai/ping.png" alt="奶瓶"></div><div class="tile is-covered" data-id="t024" data-layer="1" style="--col: 7; --row: 7; --jx: 8; --jy: 2; z-index: 117;"><img class="tile__icon" draggable="false" src="assets/nai/shi.png" alt="奶屎"></div><div class="tile is-covered" data-id="t027" data-layer="1" style="--col: 1; --row: 3; --jx: -4; --jy: -9; z-index: 113;"><img class="tile__icon" draggable="false" src="assets/nai/yu.png" alt="奶鱼"></div><div class="tile is-covered" data-id="t031" data-layer="1" style="--col: 7; --row: 5; --jx: 7; --jy: -5; z-index: 115;"><img class="tile__icon" draggable="false" src="assets/nai/wa.png" alt="奶蛙"></div><div class="tile is-covered" data-id="t032" data-layer="1" style="--col: 7; --row: 1; --jx: 1; --jy: 9; z-index: 111;"><img class="tile__icon" draggable="false" src="assets/nai/wa.png" alt="奶蛙"></div><div class="tile is-covered" data-id="t037" data-layer="1" style="--col: 3; --row: 1; --jx: -5; --jy: 4; z-index: 111;"><img class="tile__icon" draggable="false" src="assets/nai/ji.png" alt="奶鸡"></div><div class="tile is-covered" data-id="t039" data-layer="1" style="--col: 1; --row: 7; --jx: -5; --jy: 7; z-index: 117;"><img class="tile__icon" draggable="false" src="assets/nai/tu.png" alt="奶兔"></div><div class="tile is-covered" data-id="t041" data-layer="1" style="--col: 5; --row: 1; --jx: -2; --jy: 4; z-index: 111;"><img class="tile__icon" draggable="false" src="assets/nai/tu.png" alt="奶兔"></div><div class="tile is-covered" data-id="t043" data-layer="1" style="--col: 13; --row: 3; --jx: -1; --jy: 7; z-index: 113;"><img class="tile__icon" draggable="false" src="assets/nai/cha.png" alt="奶茶"></div><div class="tile is-covered" data-id="t047" data-layer="1" style="--col: 5; --row: 5; --jx: -7; --jy: 1; z-index: 115;"><img class="tile__icon" draggable="false" src="assets/nai/shu.png" alt="奶鼠"></div><div class="tile is-covered" data-id="t049" data-layer="1" style="--col: 3; --row: 5; --jx: 5; --jy: -3; z-index: 115;"><img class="tile__icon" draggable="false" src="assets/nai/mao.png" alt="奶猫"></div><div class="tile is-covered" data-id="t052" data-layer="1" style="--col: 3; --row: 3; --jx: 9; --jy: -4; z-index: 113;"><img class="tile__icon" draggable="false" src="assets/nai/ping.png" alt="奶瓶"></div><div class="tile is-covered" data-id="t054" data-layer="1" style="--col: 11; --row: 5; --jx: 4; --jy: -7; z-index: 115;"><img class="tile__icon" draggable="false" src="assets/nai/shi.png" alt="奶屎"></div><div class="tile is-covered" data-id="t008" data-layer="2" style="--col: 4; --row: 0; --jx: -9; --jy: 3; z-index: 120;"><img class="tile__icon" draggable="false" src="assets/nai/ji.png" alt="奶鸡"></div><div class="tile" data-id="t012" data-layer="2" style="--col: 10; --row: 0; --jx: 2; --jy: -1; z-index: 120;"><img class="tile__icon" draggable="false" src="assets/nai/cha.png" alt="奶茶"></div><div class="tile is-covered" data-id="t014" data-layer="2" style="--col: 4; --row: 2; --jx: 9; --jy: 8; z-index: 122;"><img class="tile__icon" draggable="false" src="assets/nai/cha.png" alt="奶茶"></div><div class="tile is-covered" data-id="t016" data-layer="2" style="--col: 12; --row: 2; --jx: 8; --jy: 5; z-index: 122;"><img class="tile__icon" draggable="false" src="assets/nai/shu.png" alt="奶鼠"></div><div class="tile is-covered" data-id="t017" data-layer="2" style="--col: 6; --row: 6; --jx: -4; --jy: -6; z-index: 126;"><img class="tile__icon" draggable="false" src="assets/nai/shu.png" alt="奶鼠"></div><div class="tile is-covered" data-id="t020" data-layer="2" style="--col: 8; --row: 6; --jx: -9; --jy: 8; z-index: 126;"><img class="tile__icon" draggable="false" src="assets/nai/mao.png" alt="奶猫"></div><div class="tile is-covered" data-id="t022" data-layer="2" style="--col: 10; --row: 2; --jx: 9; --jy: 5; z-index: 122;"><img class="tile__icon" draggable="false" src="assets/nai/ping.png" alt="奶瓶"></div><div class="tile is-covered" data-id="t023" data-layer="2" style="--col: 12; --row: 4; --jx: 2; --jy: -3; z-index: 124;"><img class="tile__icon" draggable="false" src="assets/nai/ping.png" alt="奶瓶"></div><div class="tile is-covered" data-id="t026" data-layer="2" style="--col: 2; --row: 2; --jx: 3; --jy: -1; z-index: 122;"><img class="tile__icon" draggable="false" src="assets/nai/shi.png" alt="奶屎"></div><div class="tile is-covered" data-id="t028" data-layer="2" style="--col: 6; --row: 0; --jx: 3; --jy: -4; z-index: 120;"><img class="tile__icon" draggable="false" src="assets/nai/yu.png" alt="奶鱼"></div><div class="tile is-covered" data-id="t030" data-layer="2" style="--col: 8; --row: 0; --jx: 0; --jy: 6; z-index: 120;"><img class="tile__icon" draggable="false" src="assets/nai/wa.png" alt="奶蛙"></div><div class="tile is-covered" data-id="t034" data-layer="2" style="--col: 2; --row: 6; --jx: 6; --jy: -7; z-index: 126;"><img class="tile__icon" draggable="false" src="assets/nai/gou.png" alt="奶狗"></div><div class="tile is-covered" data-id="t044" data-layer="2" style="--col: 10; --row: 6; --jx: -1; --jy: 6; z-index: 126;"><img class="tile__icon" draggable="false" src="assets/nai/cha.png" alt="奶茶"></div><div class="tile is-covered" data-id="t046" data-layer="2" style="--col: 4; --row: 6; --jx: 4; --jy: 9; z-index: 126;"><img class="tile__icon" draggable="false" src="assets/nai/shu.png" alt="奶鼠"></div><div class="tile is-covered" data-id="t051" data-layer="2" style="--col: 12; --row: 6; --jx: -2; --jy: 7; z-index: 126;"><img class="tile__icon" draggable="false" src="assets/nai/ping.png" alt="奶瓶"></div><div class="tile" data-id="t000" data-layer="3" style="--col: 5; --row: 3; --jx: -2; --jy: -4; z-index: 133;"><img class="tile__icon" draggable="false" src="assets/nai/wa.png" alt="奶蛙"></div><div class="tile" data-id="t001" data-layer="3" style="--col: 13; --row: 5; --jx: -9; --jy: 7; z-index: 135;"><img class="tile__icon" draggable="false" src="assets/nai/wa.png" alt="奶蛙"></div><div class="tile" data-id="t002" data-layer="3" style="--col: 7; --row: 5; --jx: 3; --jy: -1; z-index: 135;"><img class="tile__icon" draggable="false" src="assets/nai/wa.png" alt="奶蛙"></div><div class="tile" data-id="t004" data-layer="3" style="--col: 13; --row: 3; --jx: 4; --jy: 2; z-index: 133;"><img class="tile__icon" draggable="false" src="assets/nai/gou.png" alt="奶狗"></div><div class="tile" data-id="t005" data-layer="3" style="--col: 1; --row: 3; --jx: -3; --jy: -6; z-index: 133;"><img class="tile__icon" draggable="false" src="assets/nai/gou.png" alt="奶狗"></div><div class="tile" data-id="t006" data-layer="3" style="--col: 9; --row: 5; --jx: 5; --jy: 5; z-index: 135;"><img class="tile__icon" draggable="false" src="assets/nai/ji.png" alt="奶鸡"></div><div class="tile" data-id="t007" data-layer="3" style="--col: 5; --row: 1; --jx: -2; --jy: -3; z-index: 131;"><img class="tile__icon" draggable="false" src="assets/nai/ji.png" alt="奶鸡"></div><div class="tile" data-id="t009" data-layer="3" style="--col: 5; --row: 7; --jx: 3; --jy: -5; z-index: 137;"><img class="tile__icon" draggable="false" src="assets/nai/tu.png" alt="奶兔"></div><div class="tile" data-id="t010" data-layer="3" style="--col: 7; --row: 3; --jx: 3; --jy: 2; z-index: 133;"><img class="tile__icon" draggable="false" src="assets/nai/tu.png" alt="奶兔"></div><div class="tile" data-id="t011" data-layer="3" style="--col: 11; --row: 3; --jx: -5; --jy: -9; z-index: 133;"><img class="tile__icon" draggable="false" src="assets/nai/tu.png" alt="奶兔"></div><div class="tile" data-id="t013" data-layer="3" style="--col: 5; --row: 5; --jx: 9; --jy: 7; z-index: 135;"><img class="tile__icon" draggable="false" src="assets/nai/cha.png" alt="奶茶"></div><div class="tile" data-id="t015" data-layer="3" style="--col: 7; --row: 7; --jx: -3; --jy: -3; z-index: 137;"><img class="tile__icon" draggable="false" src="assets/nai/shu.png" alt="奶鼠"></div><div class="tile" data-id="t025" data-layer="3" style="--col: 7; --row: 1; --jx: -3; --jy: -6; z-index: 131;"><img class="tile__icon" draggable="false" src="assets/nai/shi.png" alt="奶屎"></div><div class="tile" data-id="t029" data-layer="3" style="--col: 3; --row: 7; --jx: -4; --jy: 7; z-index: 137;"><img class="tile__icon" draggable="false" src="assets/nai/yu.png" alt="奶鱼"></div><div class="tile" data-id="t040" data-layer="3" style="--col: 11; --row: 7; --jx: 5; --jy: -7; z-index: 137;"><img class="tile__icon" draggable="false" src="assets/nai/tu.png" alt="奶兔"></div></div>
+    </main>
+
+    <!-- ③ 道具区：撤销 / 移出 / 洗牌，次数来自关卡配置（FR-16～20） -->
+    <div class="propbar" id="propbar"><button type="button" class="prop prop--undo" data-kind="undo" title="撤销" disabled=""><span class="prop__glyph">↩</span><span class="prop__label">撤销</span><span class="prop__count">×3</span></button><button type="button" class="prop prop--remove" data-kind="remove" title="移出"><span class="prop__glyph">⇪</span><span class="prop__label">移出</span><span class="prop__count">×2</span></button><button type="button" class="prop prop--shuffle" data-kind="shuffle" title="洗牌"><span class="prop__glyph">⇄</span><span class="prop__label">洗牌</span><span class="prop__count">×2</span></button></div>
+
+    <!-- ④ 底部一行：左"移出"暂存区（3 格，牌可点回槽位），右槽位区（固定 7 格）
+         槽位消除后剩下的牌往前压紧（R-09）；移出的牌单独拿出来（R-13） -->
+    <footer class="tray-row">
+      <div class="holding-wrap">
+        <div class="holding" id="holding"><div class="slot slot--holding" data-holding-slot="0"></div><div class="slot slot--holding" data-holding-slot="1"></div><div class="slot slot--holding" data-holding-slot="2"></div></div>
+        <div class="holding__caption">移出暂存（可点回槽位）</div>
+      </div>
+
+      <div class="tray-wrap">
+        <div class="tray" id="tray"><div class="slot" data-slot="0"></div><div class="slot" data-slot="1"></div><div class="slot" data-slot="2"></div><div class="slot" data-slot="3"></div><div class="slot" data-slot="4"></div><div class="slot" data-slot="5"></div><div class="slot" data-slot="6"></div></div>
+        <div class="tray__hint">槽满 7 张且本次未凑成三张 → 失败</div>
+      </div>
+    </footer>
+
+    <!-- ⑤ 弹窗层由 dialogs.js 动态创建并挂在 body 上 -->
+  </div>
+
+  <!--
+    加载方式说明（重要）：
+    本项目要求"双击 index.html 即可运行、无构建、无网络请求"（NFR-01），
+    而浏览器对 file:// 协议下的 <script type="module"> 会按 CORS 拦截，
+    直接双击打开会报 "Access to script ... from origin 'null' has been blocked"。
+    因此这里用**经典脚本 + 单命名空间 window.SM**，按依赖顺序加载：
+    只有严格按"被依赖者在前"的顺序写，才能让每个文件在自执行时拿到上游类型。
+  -->
+  <script src="src/model/tile.js"></script>
+  <script src="src/model/icon-set.js"></script>
+  <script src="src/model/level-config.js"></script>
+  <script src="src/model/board.js"></script>
+  <script src="src/model/tray.js"></script>
+  <script src="src/model/holding.js"></script>
+  <script src="src/data/schema.js"></script>
+  <script src="src/data/storage-adapter.js"></script>
+  <script src="src/data/levels.js"></script>
+  <script src="src/data/fixture.js"></script>
+  <script src="src/data/repository.js"></script>
+  <script src="src/engine/event-bus.js"></script>
+  <script src="src/engine/timer.js"></script>
+  <script src="src/engine/level-generator.js"></script>
+  <script src="src/engine/command.js"></script>
+  <script src="src/engine/undo-manager.js"></script>
+  <!-- 道具登记表（P07 走查 S-1）：必须排在 prop-manager 之前，KINDS 由它提供 -->
+  <script src="src/engine/prop-table.js"></script>
+  <script src="src/engine/prop-manager.js"></script>
+  <script src="src/engine/game.js"></script>
+  <script src="src/view/icon-face.js"></script>
+  <!-- 槽格视图基类（P07 走查 S-2）：tray-view / holding-view 都在它之上 -->
+  <script src="src/view/slot-strip-view.js"></script>
+  <script src="src/view/board-view.js"></script>
+  <script src="src/view/tray-view.js"></script>
+  <script src="src/view/holding-view.js"></script>
+  <script src="src/view/hud.js"></script>
+  <script src="src/view/prop-bar.js"></script>
+  <script src="src/view/dialogs.js"></script>
+  <script src="src/view/settings-panel.js"></script>
+  <script src="src/view/effects.js"></script>
+<script src="src/audio/sound.js"></script>
+<script src="src/view/renderer.js"></script>
+  <script src="src/view/input.js"></script>
+  <script src="src/main.js"></script>
+<style>*{animation:none!important;transition:none!important}</style>
+<script>
+setTimeout(function () {
+  var b = document.querySelector('.modal__actions .btn');
+  if (b) b.click();
+  setTimeout(function () {
+    document.title = 'tiles=' + document.querySelectorAll('.tile[data-id]').length
+      + ' loaded=' + Array.prototype.filter.call(document.images, function (i) { return i.complete && i.naturalWidth > 0; }).length;
+  }, 500);
+}, 400);
+</script>
+
+
+
+<div class="modal is-hidden" role="dialog" aria-modal="true"><div class="modal__panel"><h2 class="modal__title">奶了个奶</h2><div class="modal__body"><p class="modal__line">点一张没被压住的牌，它飞进底部槽位；同图标凑满三张立即消除。</p><p class="modal__line">槽位满 7 张且这一次没凑成三张 → 失败。</p></div><div class="modal__actions"><button type="button" class="btn btn--primary">进入「入门」 60 张</button><button type="button" class="btn">进入「进阶」 108 张</button><button type="button" class="btn">进入「挑战」 144 张</button></div></div></div></body></html>
