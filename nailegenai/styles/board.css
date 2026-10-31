@@ -52,7 +52,9 @@
      再是"太规整、一张张排得好好的"——抖动的随机感是"有人在摆牌"，
      去掉它反而显得像在排队。故整体回退到 R-15 之前的样子。） */
 .tile.is-covered {
-  filter: brightness(.7) saturate(.65);
+  /* 压暗程度要够：被压住的牌如果只暗一点点，玩家会以为它能点（R-22 的反馈）。
+     .66 是"一眼看出在下面"又不至于看不清图案的分界。 */
+  filter: brightness(.66) saturate(.6);
   opacity: .92;
   cursor: not-allowed;
 }
