@@ -1,0 +1,70 @@
+﻿/* ============================================================================
+   base.css —— 全局变量、重置、字体
+   所有尺寸由一个半格单位 --u 驱动（设计 §7.1）：
+   改这一个值，整套界面等比缩放；牌宽恒为 2u，覆盖判定与渲染不会各说各话。
+   ========================================================================= */
+
+:root {
+  --u: 28px;                        /* 半格单元 */
+  --tile: calc(var(--u) * 2);       /* 牌边长 = 56px */
+  --slot: calc(var(--u) * 2);       /* 槽位格边长 */
+  --gap: 8px;
+
+  /* 位置间距系数：牌与牌的"格距"乘以它，牌面尺寸不变。
+     1.18 让同层相邻牌之间留出约 10px 空隙、上下层之间仍然压住 23px——
+     空隙是"这里是两张牌"的视觉线索，压边是"谁压住谁"的线索，两者都不能丢。
+     它只改像素位置，不改模型的半格坐标，所以覆盖判定完全不受影响。 */
+  --spread: 1.5;
+
+  --bg: #101a24;
+  --bg-soft: #16232f;
+  --panel: #1d2f3d;
+  --tile-bg: #f4ede0;
+  --tile-bg-2: #e6dccb;
+  --tile-edge: #c9bca6;
+  --text: #e8eef5;
+  --text-dim: #8ba0b3;
+  --accent: #4aa3c7;
+
+  --radius: 12px;
+  --shadow-tile: 0 2px 0 rgba(0, 0, 0, .35), 0 6px 10px rgba(0, 0, 0, .25);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background:
+    radial-gradient(1200px 600px at 50% -10%, #1b3141 0%, transparent 60%),
+    var(--bg);
+  color: var(--text);
+  font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans SC", system-ui, sans-serif;
+  font-size: 14px;
+  /* 舞台整体缩放时不希望出现横向滚动条 */
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  border: 0;
+  background: none;
+}
+
+
+/* 降低动效（FR-26 / 设计 §7.6）：一个开关同时管 CSS 动画与 JS 里的时长。
+   放在这里而不是各视图里，是因为"哪些元素会动"会随迭代增加，
+   逐个补 animation:none 迟早漏掉新增的那个。 */
+body.is-reduced-motion *,
+body.is-reduced-motion *::before,
+body.is-reduced-motion *::after {
+  animation-duration: .001s !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: .001s !important;
+}

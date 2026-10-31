@@ -1,0 +1,101 @@
+/* ============================================================================
+   layout.css —— 页面骨架：状态栏 + 牌堆区
+   牌堆区用 flex 撑满剩余高度，内部 .stage 保持固定像素尺寸再等比缩放，
+   这样"关卡尺寸"与"窗口尺寸"解耦：改窗口只改变缩放比，不改变牌之间的相对位置，
+   覆盖判定用的半格坐标因此始终有效（设计 §7.2）。
+   ========================================================================= */
+
+.app {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ① 顶部状态栏 ------------------------------------------------------------ */
+.hud {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 8px 18px;
+  min-height: 56px;
+  background: linear-gradient(180deg, rgba(29, 47, 61, .95), rgba(22, 35, 47, .75));
+  border-bottom: 1px solid rgba(255, 255, 255, .06);
+}
+
+.hud__title {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: .5px;
+  color: var(--text);
+}
+
+.hud__stat {
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+.hud__stat b {
+  color: var(--accent);
+  font-size: 15px;
+  /* 数字用等宽字形：秒数与剩余牌数变化时宽度不抖（设计 §7.2 ①） */
+  font-variant-numeric: tabular-nums;
+  margin-left: 2px;
+}
+
+.hud__note {
+  margin-left: auto;
+  color: var(--text-dim);
+  font-size: 12px;
+  opacity: .8;
+}
+
+/* ② 牌堆区 --------------------------------------------------------------- */
+.stage-wrap {
+  flex: 1 1 auto;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;   /* 缩放后仍超出的话裁掉，而不是把页面撑出滚动条 */
+  padding: 16px;
+  /* 背景图放在 ::before 上而不是这里：只有独立图层才能单独模糊，
+     模糊过的背景不会跟牌面的细边抢注意力（牌是主体，背景只负责气氛）。 */
+  background: #0b1219;
+}
+
+/* 背景图层：奶蛙版《星月夜》，轻微模糊 + 压暗 */
+.stage-wrap::before {
+  content: "";
+  position: absolute;
+  /* 外扩一点，模糊边缘才不会在四角漏出底色 */
+  inset: -8px;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(180deg, rgba(11, 18, 26, .70), rgba(11, 18, 26, .48) 45%, rgba(11, 18, 26, .78)),
+    url("../assets/bg-nai.png");
+  background-size: cover, cover;
+  background-position: center center, center 42%;
+  background-repeat: no-repeat, no-repeat;
+  filter: blur(2px) saturate(.92);
+  transform: scale(1.02);
+}
+
+/* 牌堆区四周压一圈暗角，让中间的牌更"聚" */
+.stage-wrap::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 42%, rgba(7, 12, 18, .60) 100%);
+}
+
+.stage {
+  position: relative;
+  z-index: 1;          /* 压在 ::after 暗角之上 */
+  /* 尺寸由 Renderer 按牌堆实际边界算出后写入 inline style（单位 px） */
+  transform-origin: center center;
+  will-change: transform;
+}

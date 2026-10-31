@@ -1,0 +1,101 @@
+/* ============================================================================
+   animations.css —— 迭代 6：表现层的一次性反馈
+   与 board.css / tray.css / prop.css 的分工：
+     那三份管"局面长什么样"（状态驱动的、幂等的）；
+     这一份管"刚刚发生了什么"（一次性的、放完就没了）。
+   所有动画都是 GPU 能接的 transform / opacity / filter，不改布局，
+   因此不会引出"动画期间布局抖动导致点击错位"这类问题（AC-06）。
+   ========================================================================= */
+
+/* ---------------------------------------------------------------- 飘字层 */
+
+/* 飘字挂在这层里。position:absolute + pointer-events:none：
+   既不参与布局，也不会把落在它身上的点击吃掉（important 是因为
+   之前的 `.stage` 与 `.tray` 都设过 pointer-events）。*/
+.fx-layer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 9500;
+}
+
+.fx-float {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff7e6;
+  background: rgba(12, 20, 28, .78);
+  border: 1px solid rgba(255, 226, 168, .45);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .45);
+  white-space: nowrap;
+  animation: fx-float-up 780ms cubic-bezier(.22, .7, .24, 1) both;
+}
+
+@keyframes fx-float-up {
+  0%   { opacity: 0; transform: translate(-50%, -30%) scale(.86); }
+  18%  { opacity: 1; transform: translate(-50%, -60%) scale(1); }
+  70%  { opacity: 1; transform: translate(-50%, -120%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -165%) scale(.98); }
+}
+
+/* ---------------------------------------------------------------- 落位回弹 */
+
+/* 牌落到槽位时轻轻压一下再弹回：给"这张牌确实进槽了"一个手感。
+   只动 transform，不影响热区（热区是整张牌的外接矩形）。*/
+.tile.fx-pop {
+  animation: fx-pop 220ms cubic-bezier(.34, 1.56, .64, 1) both;
+}
+
+@keyframes fx-pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(.9); }
+  100% { transform: scale(1); }
+}
+
+/* ---------------------------------------------------------------- HUD 脉冲 */
+
+/* 剩余张数变化时跳一下。用 filter + transform，不动字号，避免文字重排。*/
+.fx-pulse {
+  animation: fx-pulse 420ms ease-out both;
+}
+
+@keyframes fx-pulse {
+  0%   { transform: scale(1); filter: brightness(1); }
+  30%  { transform: scale(1.14); filter: brightness(1.5); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+
+/* ---------------------------------------------------------------- 通关/失败 */
+
+/* 结算弹窗外壳已经在 modal.css 里有入场动画；这里只给"通关"多一层暖光，
+   和"失败"区分开——失败不发光，这是唯一的表现层差异（文案差异在 dialogs 里）。*/
+.modal__panel.is-won {
+  animation: fx-win-glow 1400ms ease-out 1 both;
+}
+
+@keyframes fx-win-glow {
+  0%   { box-shadow: 0 0 0 rgba(255, 206, 120, 0); }
+  28%  { box-shadow: 0 0 34px rgba(255, 206, 120, .55); }
+  100% { box-shadow: 0 0 0 rgba(255, 206, 120, 0); }
+}
+
+/* ---------------------------------------------------------------- 无障碍 */
+
+/* 系统层面要求减少动态效果时，把"额外"的一次性反馈全部关掉；
+   局面本身的过渡（left 滑动、飞行入槽）保留极短时长，
+   否则玩家会分不清"牌进没进槽"。*/
+@media (prefers-reduced-motion: reduce) {
+  .fx-float,
+  .tile.fx-pop,
+  .fx-pulse,
+  .modal__panel.is-won {
+    animation: none !important;
+  }
+  .fx-float {
+    opacity: 0;
+  }
+}

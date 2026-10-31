@@ -1,0 +1,90 @@
+@startuml
+' 奶了个奶 —— 时序图：撤销一步（含道具回退）
+' 依据：docs/04-系统设计.md §6.2
+
+title 时序图：撤销一步操作（含道具次数回退）
+
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam sequence {
+  ArrowColor #4A6FA5
+  LifeLineBorderColor #9AA7B8
+  ParticipantBorderColor #4A6FA5
+  ParticipantBackgroundColor #F4F8FC
+  FontSize 12
+}
+autonumber
+
+actor "玩家" as P
+participant "PropBar" as PB
+participant "Game" as G
+participant "PropManager" as PM
+participant "UndoManager" as U
+participant "Command" as C
+participant "Board" as B
+participant "Tray" as T
+participant "EventBus" as EB
+participant "Renderer" as R
+
+P -> PB : click(撤销)
+PB -> G : useProp('undo')
+
+G -> G : state.can('prop')?
+alt 终局（Won / Lost）或非 Playing
+  G --> PB : { ok:false, reason:'state-locked' }
+  PB --> P : 按钮已置灰（BR-09）
+else 状态允许
+  G -> PM : canUse('undo', ctx)
+  PM --> G : { ok:false, reason:'no-count' | 'empty-stack' }
+  alt 次数为 0 或撤销栈为空
+    G --> PB : { ok:false, reason }
+    PB --> P : 提示"次数已用完" / 按钮置灰
+  else 可用
+    G -> PM : consume('undo')
+    G -> U : undo(ctx)
+    U -> U : 弹出栈顶 cmd
+    U -> C : cmd.undo(ctx)
+
+    alt EnterTrayCommand
+      opt 该次点击曾触发消除
+        C -> T : 三张按原 slotIndex 放回
+        C -> T : tile.setState('tray')
+        note right of C
+          先恢复消除的 3 张，再移出主牌：
+          反序会让槽位短暂出现 4 张同图标
+        end note
+      end
+      C -> T : removeAt(原 slotIndex)
+      C -> B : add(tile) 回原位
+      C -> B : tile.setState('board')（重建索引与 coverCount）
+    else RemoveCommand
+      C -> B : 三张 remove()
+      C -> T : 三张回原槽位
+      opt createdLayer 且该层已空
+        C -> B : 删溢出层，maxLayer--
+      end
+      C -> PM : refill('remove')
+    else ShuffleCommand
+      loop 每张参与置换的牌
+        C -> B : tile.icon = before[tileId]
+      end
+      C -> PM : refill('shuffle')
+    end
+
+    U --> G : { ok:true, cmd }
+    G -> G : stats.moves 不变（Q-05：步数不回退）
+    G -> EB : emit('board:changed') / 'tray:changed' / 'props:changed'
+    EB -> R : onEvent
+    R -> R : renderAll(snapshot)（全量重渲染）
+    note right of R
+      撤销后不做增量刷新：
+      原本压暗的牌可能变成可点，
+      增量最容易漏掉"可点性"这类派生状态
+    end note
+    G -> G : repo.saveGame()
+    G --> PB : { ok:true }
+    PB --> P : 界面恢复，撤销次数 -1
+  end
+end
+
+@enduml

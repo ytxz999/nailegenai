@@ -1,0 +1,147 @@
+/* ============================================================================
+   modal.css —— 弹窗（选关 / 暂停 / 结算）与按钮
+   一个通用面板撑起三张弹窗：结构在 dialogs.js 里拼，样式只认 .modal / .btn。
+   ========================================================================= */
+
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 20000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(6, 12, 18, .62);
+  backdrop-filter: blur(2px);
+}
+
+.modal.is-hidden {
+  display: none;
+}
+
+.modal__panel {
+  width: min(420px, 100%);
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  padding: 22px 22px 18px;
+  border-radius: calc(var(--radius) + 6px);
+  border: 1px solid var(--line);
+  background: linear-gradient(170deg, #16232f, #101a24 70%);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, .55);
+  animation: sm-modal-in .18s ease-out;
+}
+
+@keyframes sm-modal-in {
+  from { transform: translateY(8px) scale(.98); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+
+.modal__title {
+  margin: 0 0 10px;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: .02em;
+  color: var(--text);
+}
+
+.modal__body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.modal__line {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-dim);
+}
+
+.modal__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* 按钮 ---------------------------------------------------------------- */
+.btn {
+  appearance: none;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, .05);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background .15s ease, border-color .15s ease, transform .08s ease;
+}
+
+.btn:hover {
+  background: rgba(255, 255, 255, .1);
+  border-color: rgba(255, 255, 255, .22);
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+.btn--primary {
+  background: var(--accent);
+  border-color: transparent;
+  color: #06121a;
+  font-weight: 700;
+}
+
+.btn--primary:hover {
+  background: #58b6da;
+}
+
+.btn--ghost {
+  background: transparent;
+}
+
+/* HUD 里的暂停按钮：小一号，靠右 */
+.hud__pause {
+  padding: 5px 12px;
+  font-size: 12px;
+  border-radius: 999px;
+}
+
+/* 设置按钮：挨着暂停，不用 margin-left:auto，否则两个都抢"靠右" */
+.hud__settings {
+  margin-left: auto;
+  padding: 5px 12px;
+  font-size: 12px;
+  border-radius: 999px;
+}
+
+/* 轻提示 -------------------------------------------------------------- */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%);
+  max-width: 80vw;
+  padding: 9px 16px;
+  border-radius: 999px;
+  background: rgba(10, 20, 28, .94);
+  border: 1px solid var(--line);
+  color: var(--text);
+  font-size: 13px;
+  z-index: 21000;
+  pointer-events: none;
+  transition: opacity .18s ease, transform .18s ease;
+}
+
+.toast.is-hidden {
+  opacity: 0;
+  transform: translate(-50%, 8px);
+  pointer-events: none;
+}

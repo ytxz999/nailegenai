@@ -1,0 +1,77 @@
+@startuml
+' 奶了个奶 —— 状态图：游戏状态机
+' 依据：docs/04-系统设计.md §3.15
+
+title 状态图：游戏状态机（GameState）
+
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam state {
+  BackgroundColor #F4F8FC
+  BorderColor #4A6FA5
+  ArrowColor #4A6FA5
+  FontSize 13
+}
+
+[*] --> Idle : 页面加载
+
+state Idle {
+  Idle : 选关界面
+  Idle : 允许：选关
+}
+
+Idle --> Ready : 选择关卡\nstartLevel(levelId)
+Ready --> Playing : 首帧渲染完成\n（开始计时）
+
+state Playing {
+  Playing : 进行中
+  Playing : 允许：点击 / 道具 / 暂停 / 重开
+}
+
+Playing --> Paused : 暂停（含切后台）
+Paused --> Playing : 继续（计时从原值恢复）
+
+Playing --> Won : board 空 且 tray 空
+Playing --> Lost : tray 满 7 且本次未消除
+
+state Paused {
+  Paused : 遮罩 + 计时冻结
+  Paused : 允许：继续 / 重开 / 返回选关
+}
+
+state Won {
+  Won : 结算弹窗
+  Won : 写最佳记录、清存档
+  Won : 允许：重开 / 返回选关
+}
+
+state Lost {
+  Lost : 结算弹窗
+  Lost : 不写记录、清存档
+  Lost : 允许：重开 / 返回选关
+}
+
+Won --> Ready : 重开 / 再来一局
+Lost --> Ready : 重开
+Paused --> Ready : 重开
+Playing --> Ready : 重开（二次确认）
+Won --> Idle : 返回选关
+Lost --> Idle : 返回选关
+Paused --> Idle : 返回选关
+Playing --> Idle : 返回选关（先存档）
+Ready --> Idle : 返回选关
+
+note right of Won
+  终局态的共同约束（BR-09）：
+  点击、道具、暂停一律无效，
+  计时立即停止。
+end note
+
+note bottom of Playing
+  动画期间不换状态，只置 Game.#locked：
+  状态表达"局面的合法性"，
+  锁表达"这一帧的瞬时禁止"，
+  两者不能混为一谈。
+end note
+
+@enduml

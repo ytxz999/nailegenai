@@ -1,0 +1,21 @@
+﻿# 依赖与工具链（体积大，不入库）
+tools/
+
+# 临时草稿与中间产物
+_tmp/
+_out*.txt
+*.tmp
+*.log
+_mv.*
+
+# PDF 解析残留
+pdf_text.txt
+pdf_images/
+
+# 已废弃的早期选题文档（保留在本地，不入公开仓库）
+docs/_archive/
+
+# 系统文件
+Thumbs.db
+desktop.ini
+.DS_Store

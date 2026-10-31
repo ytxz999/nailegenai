@@ -1,0 +1,100 @@
+@startuml
+' 奶了个奶 —— 时序图：点击一张牌并触发消除
+' 依据：docs/04-系统设计.md §6.1
+
+title 时序图：点击一张牌并触发消除
+
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam sequence {
+  ArrowColor #4A6FA5
+  LifeLineBorderColor #9AA7B8
+  ParticipantBorderColor #4A6FA5
+  ParticipantBackgroundColor #F4F8FC
+  FontSize 12
+}
+autonumber
+
+actor "玩家" as P
+participant "BoardView" as BV
+participant "Game" as G
+participant "Board" as B
+participant "Tray" as T
+participant "UndoManager" as U
+participant "EventBus" as EB
+participant "Renderer" as R
+participant "Animator" as A
+
+P -> BV : click(tileId)
+BV -> G : clickTile(tileId)
+
+G -> G : state.can('click')?
+alt 状态不允许（Paused / Won / Lost / locked）
+  G --> BV : { ok:false, kind:'noop' }
+  BV --> P : 无反馈（动画中不打扰）
+else 允许
+  G -> B : get(tileId)
+  alt 牌不在牌堆
+    G --> BV : { ok:false, kind:'noop' }
+  else 在牌堆
+    G -> B : canPick(tileId)
+    alt coverCount > 0（被覆盖）
+      B --> G : false
+      G -> EB : emit('tile:rejected')
+      EB -> R : onEvent
+      R -> A : shake(tileId) + play('reject')
+      G --> BV : { ok:false, kind:'reject', reason:'covered' }
+      note right of G
+        不增步数、不入撤销栈、不改状态（FR-11）
+      end note
+    else 可点
+      B --> G : true
+      G -> G : new EnterTrayCommand(tileId, from)
+      G -> B : remove(tile)
+      B -> B : 删 occupied / 对上层牌 coverCount-- 
+      G -> T : append(tile)
+      T --> G : slotIndex
+      G -> G : tile.setState('tray')
+      G -> G : stats.moves++
+      G -> T : findTriple(tile.icon)
+      alt 凑满 3 张
+        T --> G : [i1, i2, i3]
+        G -> T : removeAt(i1..i3)
+        G -> G : 三张 setState('cleared')
+        G -> G : cmd.cleared = 快照
+        note right of G
+          不重排剩余槽位（BR-03）；
+          只检测刚入槽的图标，不连锁
+        end note
+      end
+      G -> U : push(cmd)
+      G -> EB : emit('tile:entered')
+      EB -> R : onEvent
+      R -> A : flyToTray() （FLIP，220ms）
+      opt 有消除
+        G -> EB : emit('tiles:cleared')
+        EB -> R : onEvent
+        R -> A : clearTiles(ids) （260ms）
+      end
+      G -> EB : emit('board:changed') / 'tray:changed' / 'stats:changed'
+      EB -> R : onEvent → 更新 HUD 与可点性
+
+      G -> G : 判终局
+      alt board.size = 0 且 tray.size = 0
+        G -> G : state.transition(Won)
+        G -> G : timer.stop()
+        G -> G : repo.submitBest() / clearGame()
+        G -> EB : emit('game:won')
+      else tray.isFull 且本次未消除
+        G -> G : state.transition(Lost)
+        G -> G : timer.stop()
+        G -> G : repo.clearGame()
+        G -> EB : emit('game:lost')
+      end
+      G -> G : repo.saveGame()（节流 300ms）
+      G --> BV : { ok:true, kind:'clear'|'enter', clearedTileIds }
+    end
+  end
+end
+
+@enduml

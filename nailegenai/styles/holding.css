@@ -1,0 +1,78 @@
+/* ============================================================================
+   holding.css —— 暂存区（R-13 的行为变更）
+   底部一行改成两个区域并排：左边"移出"暂存区（3 格，牌可点），右边槽位（7 格）。
+   格子尺寸与槽位一致（--slot-size），玩家一眼能看出"这边 3 格、那边 7 格"。
+   ========================================================================= */
+
+.tray-row {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 18px;
+  padding: 10px 12px calc(12px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(16, 26, 36, .2), rgba(16, 26, 36, .65));
+}
+
+/* 这一行自带边框与底色，所以原来的 .tray-wrap 不要再画一次 */
+.tray-row .tray-wrap {
+  border-top: 0;
+  padding: 0;
+  background: none;
+}
+
+.holding-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.holding {
+  position: relative;                 /* 暂存区内的牌同样用绝对定位 + --slot-i */
+  display: flex;
+  gap: var(--gap);
+  padding: 6px;
+  border-radius: calc(var(--radius) + 4px);
+  background: rgba(255, 255, 255, .02);
+  border: 1px dashed rgba(255, 255, 255, .18);
+}
+
+/* 暂存区满了：整块泛暖色，提示"再移出也放不下了" */
+.holding.is-full {
+  border-color: rgba(226, 178, 106, .5);
+  box-shadow: 0 0 0 2px rgba(226, 178, 106, .12) inset;
+}
+
+.holding__caption {
+  font-size: 12px;
+  color: var(--text-dim);
+  letter-spacing: .02em;
+}
+
+/* 暂存区里的牌可以点回槽位：给个"可点"的视觉承诺 */
+.tile--holding {
+  cursor: pointer;
+}
+
+.tile--holding:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.06);
+}
+
+/* 从槽位被拿到暂存区时闪一下 */
+.tile--holding.is-landing {
+  animation: sm-landing .32s ease-out;
+}
+
+.slot--holding.is-filled {
+  border-color: transparent;
+}
+
+@media (max-width: 720px) {
+  .tray-row {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+}

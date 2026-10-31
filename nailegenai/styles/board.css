@@ -1,0 +1,121 @@
+/* ============================================================================
+   board.css —— 牌的样式与"被压暗"的表现
+   关键约定：牌的像素位置完全由 CSS 从半格坐标算出来
+     left = (--col + 0.5) × --u × --spread + --jx
+     top  = (--row + 0.5) × --u × --spread + --jy
+   JS 只写 --col / --row / --jx / --jy 四个自定义属性，
+   不在 JS 里算 px —— 否则 --u 一改，渲染位置与判定坐标就会各说各话。
+   （--jx / --jy 是无单位整数，单位为 px，取值 −9～+9，纯视觉，不参与判定）
+   ========================================================================= */
+
+.stage {
+  /* 位置间距乘 --spread（牌面尺寸不变），所以舞台尺寸也要跟着乘 */
+  width: calc(var(--stage-w, 10) * var(--u) * var(--spread));
+  height: calc(var(--stage-h, 10) * var(--u) * var(--spread));
+}
+
+/* 牌本体 ---------------------------------------------------------------- */
+.tile {
+  position: absolute;
+  width: var(--tile);
+  height: var(--tile);
+  /* +0.5 个半格：舞台尺寸取"模型边界 + 1 个半格"，这半格就是抖动的活动余量。
+     否则 ±9px 的抖动会把最外圈的牌顶出舞台，被 .stage-wrap 的 overflow:hidden 裁掉一角。 */
+  left: calc((var(--col) + 0.5) * var(--u) * var(--spread) + var(--jx, 0) * 1px);
+  top: calc((var(--row) + 0.5) * var(--u) * var(--spread) + var(--jy, 0) * 1px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius);
+  border: 1px solid var(--tile-edge);
+  background: linear-gradient(160deg, var(--tile-bg), var(--tile-bg-2));
+  box-shadow: var(--shadow-tile);
+  font-size: calc(var(--u) * 1.1);
+  line-height: 1;
+  /* 迭代 2 起可点击。注意：被压住的牌也保留热区（设计 §7.4），
+     点击后由 Game 复核并给出"抖动 + 提示"的反馈，
+     这样玩家点错时能得到解释，而不是以为"这牌坏了"。 */
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: pointer;
+  transition: filter .15s ease, opacity .15s ease, transform .12s ease;
+}
+
+.tile:hover {
+  filter: brightness(1.06);
+}
+
+/* 被上层压住的牌 -------------------------------------------------------- */
+/* 压暗用 filter 而不是改背景色：牌面是渐变 + 阴影，调亮度能整体协调，
+   改背景色则要维护两套配色。
+   （R-15 曾把这里改成"不画图案的牌背"，被用户否掉两次：先是"信息不能藏"，
+     再是"太规整、一张张排得好好的"——抖动的随机感是"有人在摆牌"，
+     去掉它反而显得像在排队。故整体回退到 R-15 之前的样子。） */
+.tile.is-covered {
+  filter: brightness(.7) saturate(.65);
+  opacity: .92;
+  cursor: not-allowed;
+}
+
+.tile.is-covered:hover {
+  filter: brightness(.78) saturate(.7);
+}
+
+/* 无效点击：抖三下（FR-11 / 设计 §7.5） -------------------------------- */
+@keyframes sm-shake {
+  0%, 100% { transform: translateX(0); }
+  20%      { transform: translateX(-4px); }
+  40%      { transform: translateX(4px); }
+  60%      { transform: translateX(-3px); }
+  80%      { transform: translateX(3px); }
+}
+
+.tile.is-shaking {
+  animation: sm-shake .12s linear 3;
+  /* 抖动时压过邻居，否则左右晃会被上层牌盖住，看不出在抖 */
+  z-index: 9999 !important;
+}
+
+/* 动画期间：整块舞台禁用点击，配合 Game.lock() 双保险（设计 §7.5） ------ */
+.stage.is-locked .tile {
+  pointer-events: none;
+}
+
+/* 飞行层：从牌堆原位飞向槽位的那一份克隆（position: fixed + transform 动画） */
+.tile--fly {
+  position: fixed;
+  z-index: 9998;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius);
+  border: 1px solid var(--tile-edge);
+  background: linear-gradient(160deg, var(--tile-bg), var(--tile-bg-2));
+  box-shadow: var(--shadow-tile);
+  line-height: 1;
+  will-change: transform;
+}
+
+/* 牌面图案：奶家族谱切出来的透明 PNG（迭代 3 后由 emoji 换成图片素材） ----- */
+.tile__icon {
+  display: block;
+  width: 92%;
+  height: 92%;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* 牌堆为空时的占位说明（迭代 1 的兜底，正常不会出现） -------------------- */
+.stage__empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+

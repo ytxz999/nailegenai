@@ -1,0 +1,109 @@
+/* ============================================================================
+   tray.css —— 槽位区（7 个固定格 + 槽内的牌 + 消除动画）
+   设计要点：
+   1. 格子数量固定为 7，且**不随内容增减**——槽号就是位置，
+      消除后剩下的牌不往前挪（BR-03），玩家能看到"哪一格空了"。
+   2. 槽内的牌不走绝对定位，而是普通流布局：格子是 flex 容器，牌居中。
+      牌堆区必须用绝对定位（半格坐标是算出来的），槽位区不需要，用流式更省心。
+   3. 槽内牌尺寸比牌堆小一号（--slot-tile），因为 7 格横排必须塞进一屏宽度。
+   ========================================================================= */
+
+:root {
+  --slot-tile: calc(var(--u) * 1.5);   /* 槽内牌边长：42px */
+  --slot-size: calc(var(--u) * 2);     /* 格子边长：56px，与牌堆同尺寸的视觉锚点 */
+}
+
+.tray-wrap {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 12px calc(12px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(16, 26, 36, .2), rgba(16, 26, 36, .65));
+}
+
+.tray {
+  position: relative;             /* 槽内的牌是绝对定位浮层，锚点在这里 */
+  display: flex;
+  gap: var(--gap);
+  padding: 6px;
+  border-radius: calc(var(--radius) + 4px);
+  background: rgba(255, 255, 255, .04);
+  border: 1px solid var(--line);
+}
+
+/* 一个槽位：位置固定，内容可以空 ---------------------------------------- */
+.slot {
+  position: relative;
+  width: var(--slot-size);
+  height: var(--slot-size);
+  border-radius: var(--radius);
+  border: 1px dashed rgba(255, 255, 255, .14);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color .15s ease, background .15s ease;
+}
+
+/* 槽里有牌时，格子本身淡化，避免"两层框"视觉噪音 */
+.slot.is-filled {
+  border-color: transparent;
+}
+
+/* 槽内的牌：绝对定位浮层，位置由 --slot-i 算出来 --------------------------
+   为什么不用普通流：模型里牌一"压紧"（消除后前移），left 的过渡就会自己
+   把它滑过去；塞在格子里做流式布局只能整块跳位，看不出"补位"这回事。 */
+.tile--tray {
+  position: absolute;
+  top: calc(6px + (var(--slot-size) - var(--slot-tile)) / 2);
+  left: calc(6px + var(--slot-i, 0) * (var(--slot-size) + var(--gap))
+             + (var(--slot-size) - var(--slot-tile)) / 2);
+  width: var(--slot-tile);
+  height: var(--slot-tile);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, .28);
+  cursor: default;
+  transition: left .18s cubic-bezier(.2, .8, .2, 1),
+              filter .15s ease, opacity .15s ease, transform .12s ease;
+  animation: sm-slot-in .16s ease-out;
+}
+
+@keyframes sm-slot-in {
+  from { transform: scale(.86); opacity: .4; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+/* 三消消失：三张一起缩没，错开 30ms 由 JS 写 animation-delay --------------- */
+.tile--tray.is-clearing {
+  animation: sm-clear .26s cubic-bezier(.4, 0, .8, .4) forwards;
+  pointer-events: none;
+}
+
+@keyframes sm-clear {
+  0%   { transform: scale(1) rotate(0deg); opacity: 1; }
+  55%  { transform: scale(1.16) rotate(-6deg); opacity: .95; }
+  100% { transform: scale(0) rotate(18deg); opacity: 0; }
+}
+
+/* 槽满警告：第 7 格被占满时整个槽位区泛红，提示"下一次可能就输了" -------- */
+.tray.is-full {
+  border-color: rgba(230, 110, 110, .55);
+  box-shadow: 0 0 0 2px rgba(230, 110, 110, .18) inset;
+}
+
+.tray__hint {
+  font-size: 12px;
+  color: var(--text-dim);
+  letter-spacing: .02em;
+}
+
+/* 小屏：槽位区可以横向滚动，不挤压牌堆 ---------------------------------- */
+@media (max-width: 560px) {
+  .tray {
+    max-width: calc(100vw - 24px);
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+  .slot { flex: 0 0 auto; }
+}

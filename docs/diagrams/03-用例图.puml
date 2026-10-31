@@ -1,0 +1,97 @@
+@startuml
+' 奶了个奶 —— 用例图（系统分析阶段）
+' 依据：docs/02-需求分析.md v1.1（已冻结）
+' 说明：4 个参与者中，除"玩家"外均为系统参与者，用于显式表达"谁拥有判定权"
+
+title 奶了个奶 用例图
+
+left to right direction
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam defaultFontName "Microsoft YaHei"
+skinparam actorStyle awesome
+skinparam usecase {
+  BackgroundColor #F4F8FC
+  BorderColor #4A6FA5
+  ArrowColor #4A6FA5
+  FontSize 13
+}
+
+actor "玩家\n（R-01）" as Player
+actor "牌堆生成器\n（R-02）" as Gen <<system>>
+actor "槽位判定\n（R-03）" as TrayJudge <<system>>
+actor "计时器\n（R-04）" as Clock <<system>>
+
+rectangle "奶了个奶" {
+
+  usecase "UC-01\n选择并进入关卡" as UC01
+  usecase "UC-02\n点击牌并入槽" as UC02
+  usecase "UC-03\n三消消除" as UC03
+  usecase "UC-04\n失败判定与结算" as UC04
+  usecase "UC-05\n通关判定与结算" as UC05
+  usecase "UC-06\n使用撤销" as UC06
+  usecase "UC-07\n使用移出" as UC07
+  usecase "UC-08\n使用洗牌" as UC08
+  usecase "UC-09\n道具耗尽提示" as UC09
+  usecase "UC-10\n暂停与继续" as UC10
+  usecase "UC-11\n重开当前关" as UC11
+  usecase "UC-12\n计时与步数统计" as UC12
+  usecase "UC-13\n记录最佳成绩" as UC13
+  usecase "UC-14\n刷新后恢复进度" as UC14
+  usecase "UC-15\n查看玩法说明与设置" as UC15
+
+  usecase "使用道具\n（抽象）" as UCProp
+
+}
+
+' ---------- 玩家与用例 ----------
+Player --> UC01
+Player --> UC02
+Player --> UC04
+Player --> UC05
+Player --> UC06
+Player --> UC07
+Player --> UC08
+Player --> UC09
+Player --> UC10
+Player --> UC11
+Player --> UC13
+Player --> UC14
+Player --> UC15
+
+' ---------- 系统参与者与用例 ----------
+Gen --> UC01
+TrayJudge --> UC03
+TrayJudge --> UC04
+TrayJudge --> UC05
+Clock --> UC10
+Clock --> UC12
+Clock --> UC13
+
+' ---------- 抽象化：三种道具归入同一抽象用例 ----------
+UC06 --|> UCProp
+UC07 --|> UCProp
+UC08 --|> UCProp
+
+' ---------- 包含关系 ----------
+UC02 ..> UC03 : <<include>>
+UC04 ..> UC12 : <<include>>
+UC05 ..> UC12 : <<include>>
+UC05 ..> UC13 : <<include>>
+
+note bottom of UCProp
+  分析阶段的抽象视图：三种道具的
+  共同点只有"有次数、可准入、可撤销"，
+  效果彼此无关（见决策 D-09）。
+  此抽象不新增需求，仅用于说明
+  PropManager 的职责边界。
+end note
+
+note right of UC03
+  UC-02 include UC-03：
+  入槽之后必然要做三消检测。
+  把三消独立成用例，是为了让
+  "配对判定归槽位"这条边界显式化。
+end note
+
+@enduml

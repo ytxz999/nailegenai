@@ -1,0 +1,306 @@
+@startuml
+' 奶了个奶 —— 分析类图（职责视图）
+' 依据：docs/03-系统分析.md
+' 说明：本图只表达对象、职责与关系，不含方法体与数据结构代码；
+'       属性行是语义说明（UML 记号），不是可实现代码。
+
+title 奶了个奶 分析类图
+
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam classAttributeIconSize 0
+skinparam class {
+  BackgroundColor #FBFCFE
+  BorderColor #4A6FA5
+  ArrowColor #4A6FA5
+  FontSize 13
+}
+hide circle
+hide empty members
+
+' ================= 实体层 =================
+package "实体层（Entity）" {
+
+  class Tile <<实体>> {
+    ..
+    职责
+    ..
+    id：身份（唯一）
+    icon：当前图标
+    layer / col / row：位置（自持）
+    jitter：纯视觉偏移，不参与判定
+    state：board / tray / cleared
+  }
+
+  class Board <<实体·聚合根>> {
+    ..
+    职责
+    ..
+    持有牌堆内的全部牌
+    占用索引 occupied[layer][cell]
+    覆盖判定 canPick(t)
+    最上层空闲格位查询
+    剩余牌数统计
+    ..
+    边界：不做三消、不判胜负、不碰 DOM
+  }
+
+  class Tray <<实体>> {
+    ..
+    职责
+    ..
+    有序持有 ≤ 7 张牌
+    append / 三消检测 / 移除三张
+    报告结构事实：满 / 可消 / 溢出
+    ..
+    边界：不判胜负（胜负由 Game 下结论）
+  }
+
+  class IconSet <<实体·只读集合>> {
+    ..
+    职责
+    ..
+    提供全部图标定义
+    按种类数取前 N 种
+  }
+
+}
+
+' ================= 创建者 =================
+package "创建者（Creator）" {
+
+  class TileFactory <<创建者>> {
+    ..
+    职责
+    ..
+    创建 Tile：分配唯一 id
+    绑定图标、写入位置与抖动
+    ..
+    边界：不决定牌数与布局
+  }
+
+  class LevelGenerator <<创建者>> {
+    ..
+    职责
+    ..
+    按配置生成可解牌堆
+    反向铺牌保证"存在通关序列"
+    生成后不变量自检与重试
+    ..
+    边界：不渲染、不持久化
+  }
+
+}
+
+' ================= 值对象 =================
+package "值对象（Value Object）" {
+
+  class LevelConfig <<不可变>> {
+    ..
+    职责
+    ..
+    层数 / 每层行列 / 总牌数
+    图标种类数与每种张数
+    道具次数
+    自校验（张数 % 3 == 0 等）
+  }
+
+}
+
+' ================= 控制层 =================
+package "控制层（Control）" {
+
+  class Game <<控制者>> {
+    ..
+    职责
+    ..
+    编排一局的生命周期
+    接收玩家意图并校验状态
+    据模型事实切换 GameState
+    持有对局统计（步数、道具使用）
+    终局组织结算与存档
+    ..
+    边界：不实现判定规则
+  }
+
+  class GameState <<状态>> {
+    ..
+    职责
+    ..
+    Idle / Ready / Playing / Paused / Won / Lost
+    维护合法迁移表
+    回答"当前允许哪类操作"
+  }
+
+  class UndoManager <<控制者>> {
+    ..
+    职责
+    ..
+    压栈 / 取栈顶 / 弹栈 / 清空
+    上限 30，超出丢最旧
+    回答"现在能否撤销"
+    ..
+    边界：不实现逆操作
+  }
+
+  class PropManager <<控制者>> {
+    ..
+    职责
+    ..
+    持有三种道具剩余次数
+    准入校验（次数 / 状态 / 有意义）
+    扣减与归还
+    生成道具命令交 Game 入栈
+    ..
+    边界：不实现道具效果
+  }
+
+}
+
+' ================= 命令 =================
+package "命令（Command）" {
+
+  abstract class Command <<抽象>> {
+    ..
+    职责
+    ..
+    一次可逆操作
+    暴露：操作类型 + 如何撤销
+  }
+
+  class EnterTrayCommand {
+    ..
+    记录
+    ..
+    入槽的牌 + 原层原格位
+    本次是否触发消除、被消的 3 张
+  }
+
+  class RemoveCommand {
+    ..
+    记录
+    ..
+    被移出的 3 张 + 原槽位位置
+    它们在牌堆的落点
+  }
+
+  class ShuffleCommand {
+    ..
+    记录
+    ..
+    洗牌前的完整"牌 → 图标"映射
+  }
+
+}
+
+' ================= 服务与边界 =================
+package "服务与边界（Service / Boundary）" {
+
+  class Timer <<服务>> {
+    ..
+    职责
+    ..
+    累计毫秒 / 启动 / 暂停 / 继续
+    格式化 mm:ss
+    暂停期间不累加、恢复不跳变
+    ..
+    边界：不计步数（见遗留问题 P-01）
+  }
+
+  class Repository <<服务>> {
+    ..
+    职责
+    ..
+    序列化 / 反序列化
+    版本校验与结构完整性校验
+    localStorage 读写与损坏降级
+    ..
+    边界：不重建对象实例
+  }
+
+  class Renderer <<边界对象>> {
+    ..
+    职责
+    ..
+    把模型状态渲染为 DOM
+    把点击映射为 tileId 并转发 Game
+    播放动画与音效
+    依 GameState 置灰按钮 / 加遮罩
+    ..
+    边界：不判定能否点击、不改模型
+  }
+
+}
+
+' ================= 关系 =================
+' 组合：一局一套，重开全废
+
+Game "1" *-- "1" Board : 拥有
+Game "1" *-- "1" Tray : 拥有
+Game "1" *-- "1" GameState : 拥有
+Game "1" *-- "1" Timer : 拥有
+Game "1" *-- "1" UndoManager : 拥有
+Game "1" *-- "1" PropManager : 拥有
+
+' 聚合：牌会搬家，生死不由容器决定
+Board "1" o-- "0..*" Tile : 牌堆中的牌
+Tray "1" o-- "0..7" Tile : 槽位中的牌
+UndoManager "1" o-- "0..30" Command : 撤销栈
+
+' 命令与模型
+Command "1" --> "*" Tile : 逆操作目标
+Command "1" --> "1" Tray : 消除快照
+
+' 命令继承
+Command <|-- EnterTrayCommand
+Command <|-- RemoveCommand
+Command <|-- ShuffleCommand
+
+' 控制层对模型的依赖
+Game ..> LevelGenerator : 开局生成牌堆
+Game ..> Repository : 存档 / 读档
+PropManager ..> Board : 移出落点 / 洗牌效果
+PropManager ..> Tray : 移出取牌
+PropManager ..> UndoManager : 道具命令入栈
+
+' 创建链
+LevelGenerator ..> LevelConfig : 读取配置
+LevelGenerator ..> TileFactory : 造牌
+LevelGenerator ..> Board : 填充牌堆
+TileFactory ..> IconSet : 取图标
+LevelConfig ..> IconSet : 图标种类数决定取哪 N 种
+
+' 边界对象单向依赖（模型不依赖视图）
+Renderer ..> Game : 转发玩家意图
+Renderer ..> Board : 只读：渲染牌堆
+Renderer ..> Tray : 只读：渲染槽位
+Renderer ..> GameState : 只读：禁用 / 遮罩
+
+' 数据层读取快照
+Repository ..> Board : 导出 / 恢复快照
+Repository ..> Tray : 导出 / 恢复快照
+Repository ..> Timer : 读取累计毫秒
+Repository ..> PropManager : 读取道具次数
+
+note right of Board
+  【重点关系】Board 对 Tile 用聚合而非组合：
+  牌可以离开牌堆进入槽位，其生命周期
+  不由牌堆决定。
+  覆盖判定只读模型整数坐标，与渲染无关（D-01）。
+end note
+
+note bottom of Tray
+  【分工原则】Tray 只报"结构事实"
+  （满 / 可消 / 溢出），不判胜负；
+  胜负由 Game 下结论（D-04）。
+end note
+
+note top of Game
+  【依赖纪律】Game 不引用 Renderer：
+  只发出"状态已变化"的通知，
+  视图单向依赖模型（D-06）。
+  【薄壳原则】PropManager 只做次数与准入，
+  效果委托 Board / Tray（D-09）。
+end note
+
+@enduml

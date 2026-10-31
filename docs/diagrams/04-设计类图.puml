@@ -1,0 +1,315 @@
+@startuml
+' 奶了个奶 —— 设计类图
+' 依据：docs/04-系统设计.md（v1.0）
+' 说明：只保留关键字段与关键方法签名，完整清单见文档 §3。
+
+title 奶了个奶 设计类图
+
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam classAttributeIconSize 0
+skinparam nodesep 32
+skinparam ranksep 48
+skinparam class {
+  BackgroundColor #FBFCFE
+  BorderColor #4A6FA5
+  ArrowColor #4A6FA5
+  FontSize 12
+}
+hide circle
+hide empty members
+
+package "模型层 model" {
+
+  class Tile <<实体>> {
+    - id : string
+    - icon : string
+    - layer, col, row : int
+    - state : board | tray | cleared
+    - group : int
+    - jitterX, jitterY : int
+    --
+    + moveTo(l, c, r) : void
+    + setState(s) : void
+    + faceRect() : Rect
+  }
+
+  class Board <<聚合根>> {
+    - tiles : Map<id, Tile>
+    - occupied : Map<"L:C", Tile>
+    - coverCount : Map<id, int>
+    - maxLayer : int
+    --
+    + add(t) / remove(t) : void
+    + canPick(id) : boolean
+    + findFreeCells(layer) : Pos[]
+    + addOverflowLayer() : int
+    + groupTiles() : Map<int, Tile[]>
+    + snapshot() / restore(d)
+    + rebuildIndexes() : void
+  }
+
+  class Tray <<实体>> {
+    - slots : (Tile|null)[7]
+    --
+    + append(t) : int
+    + removeAt(i) : Tile
+    + takeFirst(n) : Tile[]
+    + findTriple(icon) : int[]
+    + isFull() / isEmpty() : boolean
+    + size() : int
+  }
+
+  class LevelConfig <<不可变>> {
+    - id, layers, cols, rows
+    - tileCount, iconKinds
+    - perIconCount
+    - props : {undo, remove, shuffle}
+    --
+    + validate() : string[]
+    + groupCount() : int
+    + stageSize() : {w, h}
+  }
+
+  class IconSet <<只读>> {
+    - pool : string[]
+    --
+    + pick(kinds) : string[]
+    + styleOf(key) : {bg, fg, label}
+  }
+
+  abstract class Command {
+    + type : string
+    --
+    + undo(ctx) : void
+    + describe() : string
+  }
+
+  class EnterTrayCommand {
+    - tileId, from : Pos
+    - slotIndex : int
+    - cleared : ClearedSnap[]
+  }
+
+  class RemoveCommand {
+    - moved : {tileId, fromSlot, to}[]
+    - createdLayer : int?
+  }
+
+  class ShuffleCommand {
+    - before : Map<tileId, icon>
+  }
+
+}
+
+package "引擎层 engine" {
+
+  class Game <<控制者>> {
+    - board, tray, state
+    - timer, undo, props, bus, repo
+    - stats : {moves, propUses}
+    - locked : boolean
+    --
+    + startLevel(levelId) : void
+    + clickTile(tileId) : ActionResult
+    + useProp(kind) : ActionResult
+    + pause() / resume() / restart()
+    + snapshot() : ViewSnapshot
+    + lock() / unlock() : void
+  }
+
+  class GameState <<状态>> {
+    - current : Idle|Ready|Playing|Paused|Won|Lost
+    --
+    + can(action) : boolean
+    + transition(to) : boolean
+    + isTerminal() : boolean
+  }
+
+  class UndoManager {
+    - stack : Command[30]
+    --
+    + push(cmd) : void
+    + canUndo() : boolean
+    + undo(ctx) : {ok, cmd}
+    + clear() : void
+  }
+
+  class PropManager {
+    - counts : {undo, remove, shuffle}
+    --
+    + init(props) : void
+    + canUse(kind, ctx) : {ok, reason}
+    + consume(kind) / refill(kind) : void
+  }
+
+  class Timer {
+    - accumulated : int
+    - startedAt : int
+    --
+    + start() / pause() / resume() / stop()
+    + elapsedMs() : int
+    + format() : string
+  }
+
+  class LevelGenerator {
+    --
+    + generate(config) : {tiles, board}
+    - buildLayout(config) : Pos[]
+    - topoOrder(positions) : Pos[]
+    - assignIcons(order, config) : Tile[]
+    - assertInvariants(tiles) : void
+  }
+
+  class TileFactory {
+    --
+    + create(icon, l, c, r, group) : Tile
+    + resetCounter() : void
+  }
+
+  class EventBus {
+    --
+    + on(evt, fn) : unsubscribe
+    + emit(evt, payload) : void
+  }
+
+  interface LayoutStrategy {
+    + buildPositions(config) : Pos[]
+  }
+
+  interface ShuffleStrategy {
+    + plan(board) : Map<tileId, icon>
+  }
+
+}
+
+package "数据层 data" {
+
+  class Repository {
+    --
+    + saveGame(game) : boolean
+    + loadGame() : Snapshot|null
+    + clearGame() : void
+    + submitBest(levelId, rec) : {isNew, rank}
+    + loadSettings() / saveSettings(s)
+  }
+
+  class StorageAdapter {
+    --
+    + read(key) : any|null
+    + write(key, v) : boolean
+    + isAvailable() : boolean
+  }
+
+}
+
+package "表现层 view" {
+
+  class Renderer <<边界对象>> {
+    --
+    + mount(root) : void
+    + renderAll(snapshot) : void
+    + onEvent(evt, payload) : void
+  }
+
+  class BoardView {
+    + render(tiles, canPickMap)
+    + markPickable(map)
+  }
+
+  class TrayView {
+    + render(slots)
+    + flashCleared(indices)
+  }
+
+  class HudView {
+    + render({level, remaining, time, moves})
+    + setLocked(b)
+  }
+
+  class DialogView {
+    + show(kind, payload)
+    + toast(text)
+  }
+
+  class Animator {
+    + flyToTray(...) : Promise
+    + clearTiles(ids) : Promise
+    + shake(id) : Promise
+    + shuffleFaces(ids) : Promise
+  }
+
+  class SoundPlayer {
+    + play(name) : void
+    + setEnabled(b) : void
+  }
+
+}
+
+' ---------- 组合 / 聚合 ----------
+Game "1" *-- "1" Board
+Game "1" *-- "1" Tray
+Game "1" *-- "1" GameState
+Game "1" *-- "1" Timer
+Game "1" *-- "1" UndoManager
+Game "1" *-- "1" PropManager
+
+Board "1" o-- "0..*" Tile : 牌堆内
+Tray "1" o-- "0..7" Tile : 槽位内
+UndoManager "1" o-- "0..30" Command
+
+' ---------- 继承 ----------
+Command <|-- EnterTrayCommand
+Command <|-- RemoveCommand
+Command <|-- ShuffleCommand
+
+' ---------- 依赖 ----------
+Game ..> EventBus : 发事件
+Game ..> Repository : 存档
+Game ..> LevelGenerator : 生成牌堆
+PropManager ..> UndoManager : 道具命令入栈
+
+LevelGenerator ..> TileFactory
+LevelGenerator ..> LevelConfig
+LevelGenerator ..> LayoutStrategy
+LevelGenerator ..> Board : 填充
+
+TileFactory ..> IconSet
+LevelConfig ..> IconSet
+
+Repository ..> StorageAdapter
+Repository ..> Board : 快照
+Repository ..> Tray : 快照
+
+Renderer ..> EventBus : 订阅
+Renderer *-- BoardView
+Renderer *-- TrayView
+Renderer *-- HudView
+Renderer *-- DialogView
+Renderer *-- Animator
+Renderer *-- SoundPlayer
+
+BoardView ..> Game : 点击转发
+TrayView ..> Game : 只读快照
+DialogView ..> Game : 重开 / 继续
+
+note right of Board
+  两个派生索引：
+  occupied 只加速查找，
+  coverCount 让 canPick 变成 O(1)。
+  二者都只在 add/remove 时增量更新，
+  并在读档后 rebuildIndexes() 重建。
+end note
+
+note bottom of Command
+  undo(ctx) 统一契约：
+  命令只存值（id / 坐标 / 图标），
+  不持 Game 或 Tile 引用（DEP-5）。
+end note
+
+note top of Game
+  依赖纪律：Game 只 emit，
+  不 import 任何 view 模块（DEP-2）。
+end note
+
+@enduml
