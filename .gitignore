@@ -19,3 +19,6 @@ docs/_archive/
 Thumbs.db
 desktop.ini
 .DS_Store
+
+# 调试截图
+_sa*.png
