@@ -22,3 +22,10 @@ desktop.ini
 
 # 调试截图
 _sa*.png
+
+# 本地调试产物
+_http*
+_sa*
+_win*
+_fx*
+_u1*
