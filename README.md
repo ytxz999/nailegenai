@@ -1,10 +1,26 @@
-﻿# 奶了个奶（NaiLeGeNai）
+# 奶了个奶（NaiLeGeNai）
 
 《面向对象设计与分析》课程大作业：一个用 AI 编程代理分阶段协作开发的**三消堆叠消除**小游戏。
 
 点一张没被压住的牌，它飞进底部槽位；同一种奶家角色凑满三张立即消除；槽位攒满 7 张而这一次没凑成三张就输了。
 
-- **直接玩**：双击 [`nailegenai/index.html`](nailegenai/index.html)（纯前端，无构建、无依赖、无网络请求）
+## 怎么玩
+
+GitHub 网页上点开 `.html` 只会看到源码，**在线玩要先开 Pages，离线玩要先把仓库下载下来**。三种方式任选：
+
+| 方式 | 操作 | 适合 |
+|---|---|---|
+| **① 在线玩** | 打开 <https://ytxz999.github.io/nailegenai/> | 什么都不想下载 |
+| **② 下载整个仓库** | 仓库页右上 `Code → Download ZIP` → 解压 → 双击 `nailegenai/index.html` | 想看源码、交作业 |
+| **③ 只要一个文件** | 下载 [`nailegenai-standalone.html`](nailegenai-standalone.html)（2.6 MB）→ 双击即玩 | 只想玩，不想解压 |
+
+方式 ① 需要仓库管理员开一次 Pages（只做一次，之后永久有效）：
+
+> `Settings → Pages → Build and deployment → Source: Deploy from a branch → Branch: main / (root) → Save`
+> 约 1 分钟后 <https://ytxz999.github.io/nailegenai/> 生效。根目录的 `index.html` 只是把访问者转到 `nailegenai/index.html`。
+
+三种方式都是纯前端：无构建、无依赖、无网络请求（`nailegenai-standalone.html` 把 CSS、JS、16 张牌面与背景图全部内联成了 data URI）。
+
 - **项目说明**：[`nailegenai/README.md`](nailegenai/README.md)（玩法 / 三关难度 / 道具 / 存档 / 演示脚本 / 已知限制）
 - **课程报告**：[`docs/06-项目报告.md`](docs/06-项目报告.md)
 
